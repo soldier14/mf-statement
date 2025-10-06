@@ -1,0 +1,25 @@
+# Binaries
+/bin/
+/dist/
+/build/
+
+# Editor / IDE files
+.idea/
+.vscode/
+
+# Dependency files
+vendor/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Output and generated data
+*.log
+
+# Go test cache and coverage
+*.out
+coverage/
+
+# Local environment
+.env
