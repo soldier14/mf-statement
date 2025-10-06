@@ -41,5 +41,5 @@ MF Statement Service is a Go-based application designed to generate monthly fina
    
 2. Build the application:
    ```bash
-   go build -o mf-statement-service
+   go build -o mf-statement
    ```

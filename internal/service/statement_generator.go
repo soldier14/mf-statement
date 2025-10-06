@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mf-statement-service/internal/model"
-	"mf-statement-service/internal/output"
-	"mf-statement-service/internal/parser"
+	"mf-statement/internal/model"
+	"mf-statement/internal/output"
+	"mf-statement/internal/parser"
 	"sort"
 	"strconv"
 )

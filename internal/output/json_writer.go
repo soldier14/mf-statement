@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"mf-statement-service/internal/model"
+	"mf-statement/internal/model"
 )
 
 type Writer interface {
