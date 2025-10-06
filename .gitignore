@@ -1,25 +1,44 @@
-# Binaries
+# Binaries and build outputs
 /bin/
-/dist/
 /build/
+/dist/
 
-# Editor / IDE files
+# Executable files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# IDE / Editor configs
 .idea/
 .vscode/
+*.swp
 
-# Dependency files
+# Dependency directories
 vendor/
 
 # OS generated files
 .DS_Store
 Thumbs.db
 
-# Output and generated data
+# Logs and temp files
 *.log
+*.tmp
 
-# Go test cache and coverage
+# Generated or exported data
+*.json
+*.csv
+exports/
+
+# Go coverage and profiling
 *.out
 coverage/
 
-# Local environment
+# Environment files
 .env
+.env.local
+.env.*
