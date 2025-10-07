@@ -2,6 +2,14 @@
 
 A command-line tool for generating monthly financial statements from CSV transaction data.
 
+<<<<<<< HEAD
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+=======
 - [Features](#features)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
@@ -9,11 +17,20 @@ A command-line tool for generating monthly financial statements from CSV transac
   - [Installation](#installation)
   - [Usage](#usage)
 - [Configuration](#configuration)
+>>>>>>> main
 - [Examples](#examples)
 - [Development](#development)
 - [Architecture](#architecture)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Git Hooks](#git-hooks)
 
-## 🛠 Installation
+## Features
+
+- **CSV Processing**: Parse transaction data from CSV files
+- **Monthly Statements**: Generate statements grouped by year and month
+- **File Output**: Save statements to files or print to console
+
+## Installation
 
 ### Prerequisites
 
@@ -43,7 +60,7 @@ A command-line tool for generating monthly financial statements from CSV transac
    chmod +x bin/mf-statement
    ```
 
-##  Quick Start
+## Quick Start
 
 1. **Prepare your CSV file** with the following format:
    ```csv
@@ -89,14 +106,7 @@ A command-line tool for generating monthly financial statements from CSV transac
 
 
 
-### Coverage Report
-
-The `make coverage` command generates a detailed coverage report:
-- Excludes logger from coverage calculations
-- Generates both console output and HTML report
-- HTML report saved to `coverage/coverage.html`
-
-### Git Hooks
+## Git Hooks
 
 The project includes pre-commit hooks to ensure code quality:
 
@@ -124,7 +134,7 @@ chmod +x .git/hooks/pre-commit
 - Validates conventional commit format
 - Examples: `feat: add new feature`, `fix: resolve bug`, `docs: update README`
 
-##  CI/CD Pipeline
+## CI/CD Pipeline
 
 The project includes automated CI/CD pipelines using GitHub Actions:
 
@@ -258,7 +268,7 @@ internal/
 - **Configuration**: Environment-based configuration
 - **Error Handling**: Comprehensive error types and handling
 
-##  Development
+## Development
 
 ### Using Makefile
 
@@ -321,4 +331,24 @@ The project follows Go best practices and includes:
 5. Write comprehensive tests
 6. Update documentation
 
+### Local CI Check
 
+Run all CI checks locally before pushing:
+
+```bash
+# Run complete CI pipeline locally
+make ci-check
+
+# Individual checks
+make lint      # Linting
+make test      # Tests
+make coverage  # Coverage analysis
+make build     # Build verification
+```
+
+### Coverage Report
+
+The `make coverage` command generates a detailed coverage report:
+- Excludes logger from coverage calculations
+- Generates both console output and HTML report
+- HTML report saved to `coverage/coverage.html`
