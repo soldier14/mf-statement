@@ -2,23 +2,13 @@ package util
 
 import (
 	"fmt"
-	"strconv"
+	"time"
 )
 
 func ParseYYYYMM(s string) (year, month int, display string, err error) {
-	if len(s) != 6 {
-		return 0, 0, "", fmt.Errorf("expected YYYYMM")
-	}
-	y, err := strconv.Atoi(s[:4])
+	t, err := time.Parse("200601", s)
 	if err != nil {
-		return 0, 0, "", err
+		return 0, 0, "", fmt.Errorf("invalid period format (expected YYYYMM): %w", err)
 	}
-	m, err := strconv.Atoi(s[4:])
-	if err != nil {
-		return 0, 0, "", err
-	}
-	if m < 1 || m > 12 {
-		return 0, 0, "", fmt.Errorf("month out of range")
-	}
-	return y, m, fmt.Sprintf("%04d/%02d", y, m), nil
+	return t.Year(), int(t.Month()), t.Format("2006/01"), nil
 }

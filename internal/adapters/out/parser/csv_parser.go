@@ -9,12 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"mf-statement/internal/model"
+	"mf-statement/internal/domain"
 )
-
-type Parser interface {
-	Parse(ctx context.Context, r io.Reader) ([]model.Transaction, error)
-}
 
 type CSVParser struct{}
 
@@ -26,7 +22,7 @@ const (
 	colContent = "content"
 )
 
-func (p *CSVParser) Parse(ctx context.Context, r io.Reader) ([]model.Transaction, error) {
+func (p *CSVParser) Parse(ctx context.Context, r io.Reader) ([]domain.Transaction, error) {
 	reader := csv.NewReader(r)
 	reader.FieldsPerRecord = -1
 	reader.TrimLeadingSpace = true
@@ -40,7 +36,7 @@ func (p *CSVParser) Parse(ctx context.Context, r io.Reader) ([]model.Transaction
 	}
 
 	var (
-		out      []model.Transaction
+		out      []domain.Transaction
 		rowIndex = 2
 	)
 	for {
@@ -80,9 +76,12 @@ func validateHeader(header []string) error {
 	return nil
 }
 
-func parseRecord(record []string) (model.Transaction, error) {
+func parseRecord(record []string) (domain.Transaction, error) {
 	if len(record) != 3 {
-		return model.Transaction{}, fmt.Errorf("invalid record: expected 3 columns, got %d (%v)", len(record), record)
+		return domain.Transaction{}, domain.NewParseError(
+			fmt.Sprintf("invalid record: expected 3 columns, got %d", len(record)),
+			fmt.Errorf("record: %v", record),
+		)
 	}
 
 	dateStr := strings.TrimSpace(record[0])
@@ -90,23 +89,34 @@ func parseRecord(record []string) (model.Transaction, error) {
 	content := strings.TrimSpace(record[2])
 
 	if dateStr == "" || amountStr == "" || content == "" {
-		return model.Transaction{}, fmt.Errorf("empty column in record: %v", record)
+		return domain.Transaction{}, domain.NewValidationError(
+			"empty column in record",
+			map[string]interface{}{
+				"record":  record,
+				"date":    dateStr,
+				"amount":  amountStr,
+				"content": content,
+			},
+		)
 	}
 
-	date, err := time.Parse(model.CSVDateLayout, dateStr)
+	date, err := time.Parse(domain.CSVDateLayout, dateStr)
 	if err != nil {
-		return model.Transaction{}, fmt.Errorf("parse date %q: %w", dateStr, err)
+		return domain.Transaction{}, domain.NewParseError(
+			fmt.Sprintf("failed to parse date: %s", dateStr),
+			err,
+		)
 	}
+
 	amount, err := strconv.ParseInt(amountStr, 10, 64)
 	if err != nil {
-		return model.Transaction{}, fmt.Errorf("parse amount %q: %w", amountStr, err)
+		return domain.Transaction{}, domain.NewParseError(
+			fmt.Sprintf("failed to parse amount: %s", amountStr),
+			err,
+		)
 	}
 
-	return model.Transaction{
-		Date:    date,
-		Amount:  amount,
-		Content: content,
-	}, nil
+	return domain.NewTransaction(date, amount, content)
 }
 
 func eq(a, b string) bool {
