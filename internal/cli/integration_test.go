@@ -73,8 +73,7 @@ var _ = Describe("Statement Generation Integration", func() {
 			Expect(statement.Period).To(Equal("2025/01"))
 			Expect(statement.TotalIncome).To(Equal(int64(2100)))
 			Expect(statement.TotalExpenditure).To(Equal(int64(-450)))
-			Expect(statement.NetAmount).To(Equal(int64(1650)))
-			Expect(statement.TransactionCount).To(Equal(4))
+			Expect(statement.Transactions).To(HaveLen(4))
 
 			// Verify transactions are sorted by date (newest first)
 			expectedDates := []string{"2025/01/15", "2025/01/09", "2025/01/05", "2025/01/01"}
@@ -129,9 +128,6 @@ invalid-date,not-a-number,Empty Content`
 				`"period": "2025/01"`,
 				`"total_income": 2000`,
 				`"total_expenditure": -300`,
-				`"net_amount": 1700`,
-				`"transaction_count": 2`,
-				`"generated_at"`,
 			}
 
 			for _, field := range expectedFields {

@@ -198,8 +198,6 @@ date,amount,content
   "period": "2025/01",
   "total_income": 2100,
   "total_expenditure": -450,
-  "net_amount": 1650,
-  "transaction_count": 3,
   "transactions": [
     {
       "date": "2025/01/15",
@@ -216,8 +214,7 @@ date,amount,content
       "amount": "2000",
       "content": "Salary"
     }
-  ],
-  "generated_at": "2025-01-15T10:30:00Z"
+  ]
 }
 ```
 
