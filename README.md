@@ -2,22 +2,12 @@
 
 A command-line tool for generating monthly financial statements from CSV transaction data.
 
-<<<<<<< HEAD
 ## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
-=======
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Usage](#usage)
-- [Configuration](#configuration)
->>>>>>> main
 - [Examples](#examples)
 - [Development](#development)
 - [Architecture](#architecture)
