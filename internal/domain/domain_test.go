@@ -75,8 +75,6 @@ var _ = Describe("Domain", func() {
 			Expect(statement.Period).To(Equal("2025/01"))
 			Expect(statement.TotalIncome).To(Equal(int64(1000)))
 			Expect(statement.TotalExpenditure).To(Equal(int64(-200)))
-			Expect(statement.NetAmount).To(Equal(int64(800)))
-			Expect(statement.TransactionCount).To(Equal(2))
 			Expect(statement.Transactions).To(HaveLen(2))
 		})
 	})

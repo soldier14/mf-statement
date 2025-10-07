@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"strings"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -32,13 +31,10 @@ var _ = Describe("JSONWriter", func() {
 				Period:           "2025/01",
 				TotalIncome:      2000,
 				TotalExpenditure: -500,
-				NetAmount:        1500,
-				TransactionCount: 2,
 				Transactions: []domain.TransactionDTO{
 					{Date: "2025/01/01", Amount: "2000", Content: "Salary"},
 					{Date: "2025/01/05", Amount: "-500", Content: "Groceries"},
 				},
-				GeneratedAt: time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC),
 			}
 
 			err := writer.Write(ctx, statement)
@@ -49,9 +45,6 @@ var _ = Describe("JSONWriter", func() {
 			Expect(output).To(ContainSubstring(`"period": "2025/01"`))
 			Expect(output).To(ContainSubstring(`"total_income": 2000`))
 			Expect(output).To(ContainSubstring(`"total_expenditure": -500`))
-			Expect(output).To(ContainSubstring(`"net_amount": 1500`))
-			Expect(output).To(ContainSubstring(`"transaction_count": 2`))
-			Expect(output).To(ContainSubstring(`"generated_at": "2025-01-01T12:00:00Z"`))
 
 			Expect(output).To(ContainSubstring(`"transactions": [`))
 			Expect(output).To(ContainSubstring(`"date": "2025/01/01"`))
@@ -64,17 +57,13 @@ var _ = Describe("JSONWriter", func() {
 				Period:           "2025/01",
 				TotalIncome:      0,
 				TotalExpenditure: 0,
-				NetAmount:        0,
-				TransactionCount: 0,
 				Transactions:     []domain.TransactionDTO{},
-				GeneratedAt:      time.Now(),
 			}
 
 			err := writer.Write(ctx, statement)
 
 			Expect(err).NotTo(HaveOccurred())
 			output := buf.String()
-			Expect(output).To(ContainSubstring(`"transaction_count": 0`))
 			Expect(output).To(ContainSubstring(`"transactions": []`))
 		})
 
@@ -83,12 +72,9 @@ var _ = Describe("JSONWriter", func() {
 				Period:           "2025/01",
 				TotalIncome:      1000,
 				TotalExpenditure: -200,
-				NetAmount:        800,
-				TransactionCount: 1,
 				Transactions: []domain.TransactionDTO{
 					{Date: "2025/01/01", Amount: "1000", Content: "Salary"},
 				},
-				GeneratedAt: time.Now(),
 			}
 
 			err := writer.Write(ctx, statement)
@@ -110,10 +96,7 @@ var _ = Describe("JSONWriter", func() {
 				Period:           "2025/01",
 				TotalIncome:      1000,
 				TotalExpenditure: -200,
-				NetAmount:        800,
-				TransactionCount: 0,
 				Transactions:     []domain.TransactionDTO{},
-				GeneratedAt:      time.Now(),
 			}
 
 			err := writer.Write(cancelledCtx, statement)
@@ -131,10 +114,7 @@ var _ = Describe("JSONWriter", func() {
 				Period:           "2025/01",
 				TotalIncome:      1000,
 				TotalExpenditure: -200,
-				NetAmount:        800,
-				TransactionCount: 0,
 				Transactions:     []domain.TransactionDTO{},
-				GeneratedAt:      time.Now(),
 			}
 
 			err := writer.Write(ctx, statement)

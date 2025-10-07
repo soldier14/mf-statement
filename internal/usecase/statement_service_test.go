@@ -101,9 +101,9 @@ var _ = Describe("StatementService", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(mockWriterInstance.writtenStatement).ToNot(BeNil())
 				Expect(mockWriterInstance.writtenStatement.Period).To(Equal(periodDisplay))
-				Expect(mockWriterInstance.writtenStatement.TransactionCount).To(Equal(2))
 				Expect(mockWriterInstance.writtenStatement.TotalIncome).To(Equal(int64(1000)))
 				Expect(mockWriterInstance.writtenStatement.TotalExpenditure).To(Equal(int64(-200)))
+				Expect(mockWriterInstance.writtenStatement.Transactions).To(HaveLen(2))
 			})
 
 			It("should call transaction service with correct parameters", func() {
@@ -168,9 +168,9 @@ var _ = Describe("StatementService", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(mockWriterInstance.writtenStatement).ToNot(BeNil())
 				Expect(mockWriterInstance.writtenStatement.Period).To(Equal(periodDisplay))
-				Expect(mockWriterInstance.writtenStatement.TransactionCount).To(Equal(2))
 				Expect(mockWriterInstance.writtenStatement.TotalIncome).To(Equal(int64(1000)))
 				Expect(mockWriterInstance.writtenStatement.TotalExpenditure).To(Equal(int64(-200)))
+				Expect(mockWriterInstance.writtenStatement.Transactions).To(HaveLen(2))
 			})
 		})
 
@@ -199,7 +199,7 @@ var _ = Describe("StatementService", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(mockWriterInstance.writtenStatement.TotalIncome).To(Equal(int64(0)))
 				Expect(mockWriterInstance.writtenStatement.TotalExpenditure).To(Equal(int64(0)))
-				Expect(mockWriterInstance.writtenStatement.TransactionCount).To(Equal(0))
+				Expect(mockWriterInstance.writtenStatement.Transactions).To(HaveLen(0))
 			})
 		})
 	})
@@ -234,7 +234,7 @@ var _ = Describe("StatementService", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(mockWriterInstance.writtenStatement).ToNot(BeNil())
 				Expect(mockWriterInstance.writtenStatement.Period).To(Equal(periodDisplay))
-				Expect(mockWriterInstance.writtenStatement.TransactionCount).To(Equal(2))
+				Expect(mockWriterInstance.writtenStatement.Transactions).To(HaveLen(2))
 			})
 		})
 

@@ -79,6 +79,7 @@ var _ = Describe("GenerateCommand", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(data)).To(ContainSubstring(`"period": "2025/01"`))
 			Expect(string(data)).To(ContainSubstring(`"total_income": 1000`))
+			Expect(string(data)).To(ContainSubstring(`"total_expenditure": -200`))
 		}, SpecTimeout(5*time.Second))
 	})
 })
