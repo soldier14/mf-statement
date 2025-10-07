@@ -1,0 +1,157 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        cache: true
+        
+    - name: Install dependencies
+      run: |
+        go mod download
+        go mod verify
+        
+    - name: Run linting
+      run: |
+        echo "🔍 Running linting checks..."
+        make lint
+        echo "✅ Linting completed successfully"
+        
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        cache: true
+        
+    - name: Install dependencies
+      run: |
+        go mod download
+        go mod verify
+        
+    - name: Install Ginkgo CLI
+      run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+      
+    - name: Run tests
+      run: |
+        echo "🧪 Running test suite..."
+        make test
+        echo "✅ All tests passed"
+        
+  coverage:
+    name: Coverage Analysis
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        cache: true
+        
+    - name: Install dependencies
+      run: |
+        go mod download
+        go mod verify
+        
+    - name: Install Ginkgo CLI
+      run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+      
+    - name: Run coverage analysis
+      run: |
+        echo "📊 Running coverage analysis..."
+        make coverage
+        echo "✅ Coverage analysis completed"
+        
+    - name: Check coverage thresholds
+      run: |
+        echo "📈 Checking coverage thresholds..."
+        COVERAGE=$(go tool cover -func=coverage/coverage_filtered.out | grep "total:" | awk '{print $3}' | sed 's/%//')
+        echo "Total coverage: ${COVERAGE}%"
+        
+        # Check if coverage meets requirements
+        if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+          echo "✅ Total coverage (${COVERAGE}%) meets requirement (≥80%)"
+        else
+          echo "❌ Total coverage (${COVERAGE}%) below requirement (≥80%)"
+          exit 1
+        fi
+        
+        # Check test coverage specifically
+        TEST_COVERAGE=$(go test -cover ./internal/... | grep "coverage:" | awk '{print $5}' | sed 's/%//' | head -1)
+        if (( $(echo "$TEST_COVERAGE >= 90" | bc -l) )); then
+          echo "✅ Test coverage (${TEST_COVERAGE}%) meets requirement (≥90%)"
+        else
+          echo "❌ Test coverage (${TEST_COVERAGE}%) below requirement (≥90%)"
+          exit 1
+        fi
+        
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage/
+        retention-days: 30
+        
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read coverage data
+          const coverageFile = 'coverage/coverage_filtered.out';
+          if (fs.existsSync(coverageFile)) {
+            const coverage = fs.readFileSync(coverageFile, 'utf8');
+            const totalLine = coverage.split('\n').find(line => line.includes('total:'));
+            const coveragePercent = totalLine ? totalLine.match(/(\d+\.\d+)%/)[1] : '0';
+            
+            const comment = `## 📊 Coverage Report
+            
+            **Total Coverage:** ${coveragePercent}%
+            
+            ✅ Coverage meets requirements (≥80%)
+            
+            <details>
+            <summary>View detailed coverage report</summary>
+            
+            \`\`\`
+            ${coverage}
+            \`\`\`
+            </details>`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
