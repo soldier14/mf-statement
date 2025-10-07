@@ -7,8 +7,8 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  lint:
-    name: Lint Check
+  lint-and-test:
+    name: Lint, Test & Coverage
     runs-on: ubuntu-latest
     
     steps:
@@ -21,95 +21,57 @@ jobs:
         go-version: '1.21'
         cache: true
         
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+        
     - name: Install dependencies
       run: |
         go mod download
         go mod verify
         
+    - name: Install Ginkgo CLI
+      run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+      
     - name: Run linting
       run: |
-        echo "🔍 Running linting checks..."
+        echo "Running linting checks..."
         make lint
-        echo "✅ Linting completed successfully"
+        echo "Linting completed successfully"
         
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    needs: lint
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
-        
-    - name: Install dependencies
+    - name: Run tests with coverage
       run: |
-        go mod download
-        go mod verify
-        
-    - name: Install Ginkgo CLI
-      run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
-      
-    - name: Run tests
-      run: |
-        echo "🧪 Running test suite..."
-        make test
-        echo "✅ All tests passed"
-        
-  coverage:
-    name: Coverage Analysis
-    runs-on: ubuntu-latest
-    needs: test
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
-        
-    - name: Install dependencies
-      run: |
-        go mod download
-        go mod verify
-        
-    - name: Install Ginkgo CLI
-      run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
-      
-    - name: Run coverage analysis
-      run: |
-        echo "📊 Running coverage analysis..."
+        echo "Running test suite with coverage..."
         make coverage
-        echo "✅ Coverage analysis completed"
+        echo "Tests and coverage completed"
         
     - name: Check coverage thresholds
       run: |
-        echo "📈 Checking coverage thresholds..."
-        COVERAGE=$(go tool cover -func=coverage/coverage_filtered.out | grep "total:" | awk '{print $3}' | sed 's/%//')
-        echo "Total coverage: ${COVERAGE}%"
+        echo "Checking coverage thresholds..."
+        
+        # Extract total coverage from the filtered coverage file
+        TOTAL_COVERAGE=$(go tool cover -func=coverage/coverage_filtered.out | grep "total:" | awk '{print $3}' | sed 's/%//')
+        echo "Total coverage: ${TOTAL_COVERAGE}%"
         
         # Check if coverage meets requirements
-        if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
-          echo "✅ Total coverage (${COVERAGE}%) meets requirement (≥80%)"
+        if (( $(echo "$TOTAL_COVERAGE >= 80" | bc -l) )); then
+          echo "Total coverage (${TOTAL_COVERAGE}%) meets requirement (≥80%)"
         else
-          echo "❌ Total coverage (${COVERAGE}%) below requirement (≥80%)"
+          echo "Total coverage (${TOTAL_COVERAGE}%) below requirement (≥80%)"
           exit 1
         fi
         
-        # Check test coverage specifically
-        TEST_COVERAGE=$(go test -cover ./internal/... | grep "coverage:" | awk '{print $5}' | sed 's/%//' | head -1)
-        if (( $(echo "$TEST_COVERAGE >= 90" | bc -l) )); then
-          echo "✅ Test coverage (${TEST_COVERAGE}%) meets requirement (≥90%)"
+        # Use the same total coverage for test coverage requirement
+        if (( $(echo "$TOTAL_COVERAGE >= 90" | bc -l) )); then
+          echo "Test coverage (${TOTAL_COVERAGE}%) meets requirement (≥90%)"
         else
-          echo "❌ Test coverage (${TEST_COVERAGE}%) below requirement (≥90%)"
+          echo "Test coverage (${TOTAL_COVERAGE}%) below requirement (≥90%)"
           exit 1
         fi
         
@@ -134,11 +96,11 @@ jobs:
             const totalLine = coverage.split('\n').find(line => line.includes('total:'));
             const coveragePercent = totalLine ? totalLine.match(/(\d+\.\d+)%/)[1] : '0';
             
-            const comment = `## 📊 Coverage Report
+            const comment = `## Coverage Report
             
             **Total Coverage:** ${coveragePercent}%
             
-            ✅ Coverage meets requirements (≥80%)
+            Coverage meets requirements (≥80%)
             
             <details>
             <summary>View detailed coverage report</summary>
