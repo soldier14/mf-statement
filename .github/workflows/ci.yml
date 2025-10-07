@@ -1,112 +1,18 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  workflow_run:
+    workflows: ["Lint Check", "Test & Coverage"]
+    types: [completed]
 
 jobs:
-  lint:
-    name: Lint Check
+  ci-status:
+    name: CI Status Check
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
-        
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-        
-    - name: Install dependencies
+    - name: Check CI Status
       run: |
-        go mod download
-        go mod verify
-        
-    - name: Run linting
-      run: |
-        echo "Running linting checks..."
-        make lint
-        echo "Linting completed successfully"
-        
-  test:
-    name: Test & Coverage
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
-        
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-        
-    - name: Install dependencies
-      run: |
-        go mod download
-        go mod verify
-        
-    - name: Install Ginkgo CLI
-      run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
-      
-    - name: Run tests with coverage
-      run: |
-        echo "Running test suite with coverage..."
-        make coverage
-        echo "Tests and coverage completed"
-        
-    - name: Check coverage thresholds
-      run: |
-        echo "Checking coverage thresholds..."
-        
-        # Extract total coverage from the filtered coverage file
-        TOTAL_COVERAGE=$(go tool cover -func=coverage/coverage_filtered.out | grep "total:" | awk '{print $3}' | sed 's/%//')
-        echo "Total coverage: ${TOTAL_COVERAGE}%"
-        
-        # Check if coverage meets requirements
-        if (( $(echo "$TOTAL_COVERAGE >= 80" | bc -l) )); then
-          echo "Total coverage (${TOTAL_COVERAGE}%) meets requirement (≥80%)"
-        else
-          echo "Total coverage (${TOTAL_COVERAGE}%) below requirement (≥80%)"
-          exit 1
-        fi
-        
-        # Use the same total coverage for test coverage requirement
-        if (( $(echo "$TOTAL_COVERAGE >= 90" | bc -l) )); then
-          echo "Test coverage (${TOTAL_COVERAGE}%) meets requirement (≥90%)"
-        else
-          echo "Test coverage (${TOTAL_COVERAGE}%) below requirement (≥90%)"
-          exit 1
-        fi
-        
-    - name: Upload coverage reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: coverage/
-        retention-days: 30
+        echo "All CI checks passed successfully!"
+        echo "Lint and Test workflows completed successfully"
