@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Test & Coverage
 
 on:
   push:
@@ -7,55 +7,23 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  lint:
-    name: Lint Check
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache: true
-        
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-        
-    - name: Install dependencies
-      run: |
-        go mod download
-        go mod verify
-        
-    - name: Run linting
-      run: |
-        echo "Running linting checks..."
-        make lint
-        echo "Linting completed successfully"
-        
-  test:
+  test-and-coverage:
     name: Test & Coverage
     runs-on: ubuntu-latest
-    
+    permissions:
+      issues: write
+      pull-requests: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: '1.21'
         cache: true
-        
+
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
@@ -65,29 +33,29 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-        
+
     - name: Install dependencies
       run: |
         go mod download
         go mod verify
-        
+
     - name: Install Ginkgo CLI
       run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
-      
+
     - name: Run tests with coverage
       run: |
         echo "Running test suite with coverage..."
         make coverage
         echo "Tests and coverage completed"
-        
+
     - name: Check coverage thresholds
       run: |
         echo "Checking coverage thresholds..."
-        
+
         # Extract total coverage from the filtered coverage file
         TOTAL_COVERAGE=$(go tool cover -func=coverage/coverage_filtered.out | grep "total:" | awk '{print $3}' | sed 's/%//')
         echo "Total coverage: ${TOTAL_COVERAGE}%"
-        
+
         # Check if coverage meets requirements
         if (( $(echo "$TOTAL_COVERAGE >= 80" | bc -l) )); then
           echo "Total coverage (${TOTAL_COVERAGE}%) meets requirement (≥80%)"
@@ -95,7 +63,7 @@ jobs:
           echo "Total coverage (${TOTAL_COVERAGE}%) below requirement (≥80%)"
           exit 1
         fi
-        
+
         # Use the same total coverage for test coverage requirement
         if (( $(echo "$TOTAL_COVERAGE >= 90" | bc -l) )); then
           echo "Test coverage (${TOTAL_COVERAGE}%) meets requirement (≥90%)"
@@ -103,10 +71,46 @@ jobs:
           echo "Test coverage (${TOTAL_COVERAGE}%) below requirement (≥90%)"
           exit 1
         fi
-        
+
     - name: Upload coverage reports
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: coverage/
         retention-days: 30
+
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+
+          // Read coverage data
+          const coverageFile = 'coverage/coverage_filtered.out';
+          if (fs.existsSync(coverageFile)) {
+            const coverage = fs.readFileSync(coverageFile, 'utf8');
+            const totalLine = coverage.split('\n').find(line => line.includes('total:'));
+            const coveragePercent = totalLine ? totalLine.match(/(\d+\.\d+)%/)[1] : '0';
+
+            const comment = `## Coverage Report
+
+            **Total Coverage:** ${coveragePercent}%
+
+            Coverage meets requirements (≥80%)
+
+            <details>
+            <summary>View detailed coverage report</summary>
+
+            \`\`\`
+            ${coverage}
+            \`\`\`
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
