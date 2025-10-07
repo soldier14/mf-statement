@@ -1,23 +1,13 @@
 # MF Statement CLI
 
-[![Coverage](https://img.shields.io/badge/coverage-93.9%25-brightgreen)](https://github.com/kiet.trang/mf-statement)
-[![Go Version](https://img.shields.io/badge/go-1.21-blue)](https://golang.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-
 A command-line tool for generating monthly financial statements from CSV transaction data.
 
-##  Features
-
-- **CSV Processing**: Parse transaction data from CSV files with flexible format support
-- **Monthly Filtering**: Generate statements for specific months with automatic filtering
-- **Financial Calculations**: Automatic calculation of income, expenditure, and net amounts
-- **JSON Output**: Structured JSON output with detailed transaction summaries
-
-##  Table of Contents
-
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Usage](#usage)
 - [Configuration](#configuration)
 - [Examples](#examples)
 - [Development](#development)
@@ -73,7 +63,7 @@ A command-line tool for generating monthly financial statements from CSV transac
    ./bin/mf-statement generate --period 202501 --csv transactions.csv --out statement.json
    ```
 
-## 📖 Usage
+## Usage
 
 ### Basic Commands
 
@@ -92,10 +82,10 @@ A command-line tool for generating monthly financial statements from CSV transac
 
 | Flag | Short | Description | Required |
 |------|-------|-------------|----------|
-| `--period` | `-p` | Month in YYYYMM format (e.g., 202501) |  |
-| `--csv` | `-c` | Path to CSV file |  |
-| `--out` | `-o` | Output JSON file path (default: stdout) |  |
-| `--verbose` | `-v` | Enable verbose logging |  |
+| `--period` | `-p` | Month in YYYYMM format (e.g., 202501) | Yes |
+| `--csv` | `-c` | Path to CSV file | Yes |
+| `--out` | `-o` | Output JSON file path (default: stdout) | No |
+| `--verbose` | `-v` | Enable verbose logging | No |
 
 
 
@@ -188,7 +178,7 @@ The pipeline will **succeed** if:
 -  Coverage meets requirements
 -  Build successful
 
-## 📝 Examples
+## Examples
 
 ### Example 1: Basic Statement Generation
 
@@ -243,7 +233,7 @@ date,amount,content
 ./bin/mf-statement generate --period 202501 --csv transactions.csv --out monthly-statement.json
 ```
 
-## 🏗 Architecture
+## Architecture
 
 The application follows clean architecture principles with clear separation of concerns:
 
