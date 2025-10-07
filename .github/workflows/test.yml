@@ -85,32 +85,37 @@ jobs:
       with:
         script: |
           const fs = require('fs');
+          const { execSync } = require('child_process');
 
-          // Read coverage data
-          const coverageFile = 'coverage/coverage_filtered.out';
-          if (fs.existsSync(coverageFile)) {
-            const coverage = fs.readFileSync(coverageFile, 'utf8');
-            const totalLine = coverage.split('\n').find(line => line.includes('total:'));
-            const coveragePercent = totalLine ? totalLine.match(/(\d+\.\d+)%/)[1] : '0';
-
-            const comment = `## Coverage Report
-
-            **Total Coverage:** ${coveragePercent}%
-
-            Coverage meets requirements (≥80%)
-
-            <details>
-            <summary>View detailed coverage report</summary>
-
-            \`\`\`
-            ${coverage}
-            \`\`\`
-            </details>`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+          // Get coverage from the filtered coverage file using go tool
+          let coveragePercent = '0';
+          try {
+            const coverageOutput = execSync('go tool cover -func=coverage/coverage_filtered.out | grep "total:"', { encoding: 'utf8' });
+            const match = coverageOutput.match(/(\d+\.\d+)%/);
+            if (match) {
+              coveragePercent = match[1];
+            }
+          } catch (error) {
+            console.log('Error getting coverage:', error.message);
           }
+
+          const comment = `## Coverage Report
+
+          **Total Coverage:** ${coveragePercent}%
+
+          ${parseFloat(coveragePercent) >= 80 ? '✅' : '❌'} Coverage ${parseFloat(coveragePercent) >= 80 ? 'meets' : 'does not meet'} requirements (≥80%)
+
+          <details>
+          <summary>View detailed coverage report</summary>
+
+          \`\`\`
+          ${fs.existsSync('coverage/coverage_filtered.out') ? fs.readFileSync('coverage/coverage_filtered.out', 'utf8') : 'Coverage file not found'}
+          \`\`\`
+          </details>`;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
