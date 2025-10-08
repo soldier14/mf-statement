@@ -29,10 +29,8 @@ Thumbs.db
 *.log
 *.tmp
 
-# Generated or exported data
-*.json
-*.csv
-exports/
+# Test data outputs (keep fixtures, ignore generated outputs)
+testdata/output/
 
 # Go coverage and profiling
 *.out

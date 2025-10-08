@@ -20,6 +20,7 @@ func NewGenerateCommand() *cobra.Command {
 		csvPath        string
 		outputFilePath string
 		verbose        bool
+		timeout        int
 	)
 
 	cmd := &cobra.Command{
@@ -43,7 +44,10 @@ Where:
   mf-statement generate --period 202501 --csv transactions.csv --out statement.json
   
   # Generate with verbose logging
-  mf-statement generate --period 202501 --csv transactions.csv --verbose`,
+  mf-statement generate --period 202501 --csv transactions.csv --verbose
+  
+  # Generate with custom timeout
+  mf-statement generate --period 202501 --csv transactions.csv --timeout 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if periodArg == "" || csvPath == "" {
 				_ = cmd.Help()
@@ -62,17 +66,17 @@ Where:
 			}
 
 			if verbose {
-				logger.SetLevel(util.LogLevelDebug)
+				logger = util.NewDebugLogger()
 			}
 
-			logger.Info("Generating statement for period: %s", display)
-			logger.Debug("CSV path: %s", csvPath)
-			logger.Debug("Output file: %s", outputFilePath)
+			logger.Info("Generating statement for period", "period", display)
+			logger.Debug("CSV path", "path", csvPath)
+			logger.Debug("Output file", "file", outputFilePath)
 
 			var writer output.Writer
 			if outputFilePath != "" {
 				writer = output.NewJSONFile(outputFilePath)
-				logger.Info("Output will be written to: %s", outputFilePath)
+				logger.Info("Output will be written to file", "file", outputFilePath)
 			} else {
 				writer = output.NewJSON(os.Stdout)
 				logger.Info("Output will be written to stdout")
@@ -85,11 +89,11 @@ Where:
 
 			statementService := usecase.NewStatementService(transactionService, writer)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 			defer cancel()
 
 			if err := statementService.GenerateMonthlyStatement(ctx, csvPath, display, year, month); err != nil {
-				logger.Error("Failed to generate statement: %v", err)
+				logger.Error("Failed to generate statement", "error", err)
 				return err
 			}
 
@@ -102,6 +106,7 @@ Where:
 	cmd.Flags().StringVarP(&csvPath, "csv", "c", "", "Path to CSV file or file:// URI")
 	cmd.Flags().StringVarP(&outputFilePath, "out", "o", "", "Output JSON file path (default: stdout)")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+	cmd.Flags().IntVarP(&timeout, "timeout", "t", 30, "Timeout in seconds for processing (default: 30)")
 
 	_ = cmd.MarkFlagRequired("period")
 	_ = cmd.MarkFlagRequired("csv")

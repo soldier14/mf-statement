@@ -36,8 +36,8 @@ func (m *mockWriter) Write(ctx context.Context, s domain.Statement) error {
 
 var _ = Describe("Statement Generation Integration", func() {
 	var (
-		statementService   *usecase.StatementService
-		transactionService *usecase.TransactionService
+		statementService   usecase.StatementService
+		transactionService usecase.TransactionService
 		writer             *mockWriter
 		ctx                context.Context
 	)

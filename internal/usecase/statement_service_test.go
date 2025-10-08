@@ -13,10 +13,16 @@ import (
 
 // Mock implementations
 type mockTransactionService struct {
+	allTransactions         []domain.Transaction
 	transactionsByPeriod    []domain.Transaction
 	transactionsByDateRange []domain.Transaction
+	allTransactionsError    error
 	periodError             error
 	dateRangeError          error
+}
+
+func (m *mockTransactionService) GetAllTransactions(ctx context.Context, csvFileURI string) ([]domain.Transaction, error) {
+	return m.allTransactions, m.allTransactionsError
 }
 
 func (m *mockTransactionService) GetTransactionsByPeriod(ctx context.Context, csvFileURI string, year, month int) ([]domain.Transaction, error) {
@@ -51,7 +57,7 @@ func (m *mockWriter) Write(ctx context.Context, statement domain.Statement) erro
 
 var _ = Describe("StatementService", func() {
 	var (
-		service            *usecase.StatementService
+		service            usecase.StatementService
 		mockTxService      *mockTransactionService
 		mockWriterInstance *mockWriter
 		ctx                context.Context
@@ -67,8 +73,6 @@ var _ = Describe("StatementService", func() {
 	Describe("NewStatementService", func() {
 		It("should create a new StatementService with dependencies", func() {
 			Expect(service).ToNot(BeNil())
-			Expect(service.TransactionService).To(Equal(mockTxService))
-			Expect(service.Writer).To(Equal(mockWriterInstance))
 		})
 	})
 

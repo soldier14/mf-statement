@@ -12,3 +12,8 @@ func ParseYYYYMM(s string) (year, month int, display string, err error) {
 	}
 	return t.Year(), int(t.Month()), t.Format("2006/01"), nil
 }
+
+// Between checks if a time is between start and end (inclusive)
+func Between(t, start, end time.Time) bool {
+	return !t.Before(start) && !t.After(end)
+}

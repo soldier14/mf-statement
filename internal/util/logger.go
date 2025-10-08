@@ -1,96 +1,60 @@
 package util
 
 import (
-	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
-	"time"
 )
 
-// LogLevel represents the logging level
-type LogLevel int
-
-const (
-	LogLevelDebug LogLevel = iota
-	LogLevelInfo
-	LogLevelWarn
-	LogLevelError
-)
-
-// Logger provides structured logging
+// Logger wraps slog.Logger for our application
 type Logger struct {
-	level  LogLevel
-	output io.Writer
-	logger *log.Logger
+	*slog.Logger
 }
 
-// NewLogger creates a new logger
-func NewLogger(level LogLevel, output io.Writer) *Logger {
+// NewLogger creates a new logger with slog
+func NewLogger(level slog.Level, output io.Writer) *Logger {
 	if output == nil {
 		output = os.Stderr
 	}
 
-	return &Logger{
-		level:  level,
-		output: output,
-		logger: log.New(output, "", 0),
+	opts := &slog.HandlerOptions{
+		Level: level,
 	}
+
+	handler := slog.NewTextHandler(output, opts)
+	logger := slog.New(handler)
+
+	return &Logger{Logger: logger}
 }
 
 // NewDefaultLogger creates a logger with default settings
 func NewDefaultLogger() *Logger {
-	return NewLogger(LogLevelInfo, os.Stderr)
+	return NewLogger(slog.LevelInfo, os.Stderr)
 }
 
-// Debug logs a debug message
-func (l *Logger) Debug(format string, args ...interface{}) {
-	if l.level <= LogLevelDebug {
-		l.log("DEBUG", format, args...)
-	}
+// NewDebugLogger creates a debug-level logger
+func NewDebugLogger() *Logger {
+	return NewLogger(slog.LevelDebug, os.Stderr)
 }
 
-// Info logs an info message
-func (l *Logger) Info(format string, args ...interface{}) {
-	if l.level <= LogLevelInfo {
-		l.log("INFO", format, args...)
-	}
-}
-
-// Warn logs a warning message
-func (l *Logger) Warn(format string, args ...interface{}) {
-	if l.level <= LogLevelWarn {
-		l.log("WARN", format, args...)
-	}
-}
-
-// Error logs an error message
-func (l *Logger) Error(format string, args ...interface{}) {
-	if l.level <= LogLevelError {
-		l.log("ERROR", format, args...)
-	}
+// NewQuietLogger creates a logger that only shows errors
+func NewQuietLogger() *Logger {
+	return NewLogger(slog.LevelError, os.Stderr)
 }
 
 // WithFields creates a new logger with additional context
 func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
-	// For simplicity, we'll just return the same logger
-	// In a real implementation, you might want to use structured logging
-	return l
+	args := make([]any, 0, len(fields)*2)
+	for k, v := range fields {
+		args = append(args, k, v)
+	}
+
+	newLogger := l.Logger.With(args...)
+	return &Logger{Logger: newLogger}
 }
 
-func (l *Logger) log(level, format string, args ...interface{}) {
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	message := fmt.Sprintf(format, args...)
-	l.logger.Printf("[%s] %s %s", timestamp, level, message)
-}
-
-// SetLevel sets the logging level
-func (l *Logger) SetLevel(level LogLevel) {
-	l.level = level
-}
-
-// SetOutput sets the output writer
-func (l *Logger) SetOutput(output io.Writer) {
-	l.output = output
-	l.logger = log.New(output, "", 0)
+// WithField creates a new logger with a single field
+func (l *Logger) WithField(key string, value interface{}) *Logger {
+	newLogger := l.Logger.With(key, value)
+	return &Logger{Logger: newLogger}
 }

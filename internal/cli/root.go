@@ -29,13 +29,14 @@ calculating income, expenditure, and providing detailed transaction summaries.`,
 
 	root.AddCommand(NewVersionCommand())
 	root.AddCommand(NewGenerateCommand())
+	root.AddCommand(generateOptimizedCmd)
 
 	return root
 }
 
 func Execute() {
 	if err := NewRootCommand().Execute(); err != nil {
-		logger.Error("Command failed: %v", err)
+		logger.Error("Command failed", "error", err)
 		os.Exit(1)
 	}
 }

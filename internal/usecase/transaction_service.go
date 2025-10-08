@@ -2,33 +2,34 @@ package usecase
 
 import (
 	"context"
-	"io"
 	"mf-statement/internal/domain"
+	"mf-statement/internal/util"
 	"sort"
 	"time"
 )
 
-type Source interface {
-	Open(ctx context.Context, uri string) (io.ReadCloser, error)
+type TransactionService interface {
+	GetAllTransactions(ctx context.Context, csvFileURI string) ([]domain.Transaction, error)
+	GetTransactionsByPeriod(ctx context.Context, csvFileURI string, year, month int) ([]domain.Transaction, error)
+	GetTransactionsByDateRange(ctx context.Context, csvFileURI string, startDate, endDate time.Time) ([]domain.Transaction, error)
+	CalculateTotals(transactions []domain.Transaction) (totalIncome, totalExpenditure int64)
 }
 
-type Parser interface {
-	Parse(ctx context.Context, reader io.Reader) ([]domain.Transaction, error)
+type TransactionServiceImpl struct {
+	Source    Source
+	Parser    Parser
+	Validator Validator
 }
 
-type TransactionService struct {
-	Source Source
-	Parser Parser
-}
-
-func NewTransactionService(source Source, parser Parser) *TransactionService {
-	return &TransactionService{
-		Source: source,
-		Parser: parser,
+func NewTransactionService(source Source, parser Parser) TransactionService {
+	return &TransactionServiceImpl{
+		Source:    source,
+		Parser:    parser,
+		Validator: NewPeriodValidator(),
 	}
 }
 
-func (s *TransactionService) GetAllTransactions(ctx context.Context, csvFileURI string) ([]domain.Transaction, error) {
+func (s *TransactionServiceImpl) GetAllTransactions(ctx context.Context, csvFileURI string) ([]domain.Transaction, error) {
 	csvReader, err := s.Source.Open(ctx, csvFileURI)
 	if err != nil {
 		return nil, domain.NewIOError("failed to open CSV source", err)
@@ -43,17 +44,9 @@ func (s *TransactionService) GetAllTransactions(ctx context.Context, csvFileURI 
 	return transactions, nil
 }
 
-func (s *TransactionService) GetTransactionsByPeriod(ctx context.Context, csvFileURI string, year, month int) ([]domain.Transaction, error) {
-	if year < 1900 || year > 2100 {
-		return nil, domain.NewValidationError("invalid year", map[string]interface{}{
-			"year": year,
-		})
-	}
-
-	if month < 1 || month > 12 {
-		return nil, domain.NewValidationError("invalid month", map[string]interface{}{
-			"month": month,
-		})
+func (s *TransactionServiceImpl) GetTransactionsByPeriod(ctx context.Context, csvFileURI string, year, month int) ([]domain.Transaction, error) {
+	if err := s.Validator.ValidatePeriod(year, month); err != nil {
+		return nil, err
 	}
 
 	allTransactions, err := s.GetAllTransactions(ctx, csvFileURI)
@@ -75,7 +68,7 @@ func (s *TransactionService) GetTransactionsByPeriod(ctx context.Context, csvFil
 	return filteredTransactions, nil
 }
 
-func (s *TransactionService) GetTransactionsByDateRange(ctx context.Context, csvFileURI string, startDate, endDate time.Time) ([]domain.Transaction, error) {
+func (s *TransactionServiceImpl) GetTransactionsByDateRange(ctx context.Context, csvFileURI string, startDate, endDate time.Time) ([]domain.Transaction, error) {
 	allTransactions, err := s.GetAllTransactions(ctx, csvFileURI)
 	if err != nil {
 		return nil, err
@@ -83,8 +76,7 @@ func (s *TransactionService) GetTransactionsByDateRange(ctx context.Context, csv
 
 	var filteredTransactions []domain.Transaction
 	for _, transaction := range allTransactions {
-		if (transaction.Date.Equal(startDate) || transaction.Date.After(startDate)) &&
-			(transaction.Date.Equal(endDate) || transaction.Date.Before(endDate)) {
+		if util.Between(transaction.Date, startDate, endDate) {
 			filteredTransactions = append(filteredTransactions, transaction)
 		}
 	}
@@ -96,7 +88,7 @@ func (s *TransactionService) GetTransactionsByDateRange(ctx context.Context, csv
 	return filteredTransactions, nil
 }
 
-func (s *TransactionService) CalculateTotals(transactions []domain.Transaction) (totalIncome, totalExpenditure int64) {
+func (s *TransactionServiceImpl) CalculateTotals(transactions []domain.Transaction) (totalIncome, totalExpenditure int64) {
 	for _, transaction := range transactions {
 		if transaction.IsIncome() {
 			totalIncome += transaction.Amount
