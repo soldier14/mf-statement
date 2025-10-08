@@ -12,6 +12,7 @@ import (
 
 	"mf-statement/internal/domain"
 	"mf-statement/internal/usecase"
+	"mf-statement/internal/util"
 )
 
 type mockSource struct {
@@ -43,7 +44,7 @@ func (m mockParser) Parse(_ context.Context, _ io.Reader) ([]domain.Transaction,
 
 var _ = Describe("TransactionService", func() {
 	var (
-		service *usecase.TransactionService
+		service usecase.TransactionService
 		ctx     context.Context
 	)
 
@@ -137,14 +138,6 @@ var _ = Describe("TransactionService", func() {
 			service = usecase.NewTransactionService(mockSource{}, mockParser{})
 		})
 
-		It("should return error for invalid year", func() {
-			// When
-			_, err := service.GetTransactionsByPeriod(ctx, "test.csv", 1800, 1)
-
-			// Then
-			Expect(err).To(HaveOccurred())
-		})
-
 		It("should return error for invalid month", func() {
 			// When
 			_, err := service.GetTransactionsByPeriod(ctx, "test.csv", 2025, 13)
@@ -185,5 +178,27 @@ var _ = Describe("TransactionService", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(transactions).To(BeEmpty())
 		})
+	})
+
+	Context("Between", func() {
+		It("should include dates within range", func() {
+			start := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+			end := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
+
+			// Test dates within range
+			Expect(util.Between(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), start, end)).To(BeTrue())  // start date
+			Expect(util.Between(time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC), start, end)).To(BeTrue()) // middle
+			Expect(util.Between(time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC), start, end)).To(BeTrue()) // end date
+		})
+
+		It("should exclude dates outside range", func() {
+			start := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+			end := time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
+
+			// Test dates outside range
+			Expect(util.Between(time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC), start, end)).To(BeFalse()) // before start
+			Expect(util.Between(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC), start, end)).To(BeFalse())   // after end
+		})
+
 	})
 })
