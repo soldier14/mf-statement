@@ -171,15 +171,6 @@ The project includes automated CI/CD pipelines using GitHub Actions:
 
 ### **Continuous Deployment (CD)**
 
-**Release Pipeline:**
-- Triggered on version tags (`v*`)
-- Builds multi-platform binaries:
-  - Linux (AMD64, ARM64)
-  - macOS (Intel, Apple Silicon)
-  - Windows (AMD64)
-- Creates GitHub releases with checksums
-- Automated binary distribution
-
 ### **Quality Gates**
 
 The pipeline will **fail** if:
